@@ -16,6 +16,8 @@
  */
 import base64 from 'base64-js';
 import sha256 from 'js-sha256';
+import { App } from '@capacitor/app';
+import { InAppBrowser as Browser } from '@capgo/inappbrowser'
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
@@ -58,7 +60,7 @@ function Keycloak (config) {
         kc.authenticated = false;
 
         callbackStorage = createCallbackStorage();
-        var adapters = ['default', 'cordova', 'cordova-native', 'capacitor', 'capacitor-native'];
+        var adapters = ['default', 'cordova', 'cordova-native', 'capacitor', 'capacitor-native', 'capacitor-browser'];
 
         if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
             adapter = loadAdapter(initOptions.adapter);
@@ -1713,6 +1715,86 @@ function Keycloak (config) {
 
                     if (typeof accountUrl !== "undefined") {
                         window.open(accountUrl, "_system");
+                    } else {
+                        throw "Not supported by the OIDC server";
+                    }
+                },
+
+                redirectUri: function(options) {
+                    if (options && options.redirectUri) {
+                        return options.redirectUri;
+                    } else if (kc.redirectUri) {
+                        return kc.redirectUri;
+                    } else {
+                        return "http://localhost";
+                    }
+                }
+            };
+        }
+
+        if (type == "capacitor-browser") {
+            loginIframe.enable = false;
+
+            return {
+                login: function(options) {
+                    var promise = createPromise();
+                    var loginUrl = kc.createLoginUrl(options);
+
+                    // const addUrlListener = App.addListener("appUrlOpen", data => {
+                    //     var oauth = parseCallback(data.url);
+                    //     processCallback(oauth, promise);
+                    //     addUrlListener.remove();
+                    // });
+
+                    const UrlChangeListener = Browser.addListener('urlChangeEvent', (data) => {
+                        if (data.url.indexOf(kc.redirectUri) === 0) {
+                            var oauth = parseCallback(data.url);
+                            processCallback(oauth, promise);
+                            UrlChangeListener.remove();
+                        }
+                    });
+
+                    // window.open(loginUrl, "_system");
+                    Browser.openWebView({url: loginUrl});
+                    return promise.promise;
+                },
+
+                logout: function(options) {
+                    var promise = createPromise();
+                    var logoutUrl = kc.createLogoutUrl(options);
+
+                    const addUrlListener = App.addListener("appUrlOpen", data => {
+                        kc.clearToken();
+                        promise.setSuccess();
+                        addUrlListener.remove();
+                    });
+
+                    // window.open(logoutUrl, "_system");
+                    Browser.open({url: logoutUrl});
+                    return promise.promise;
+                },
+
+                register: function(options) {
+                    var promise = createPromise();
+                    var registerUrl = kc.createRegisterUrl(options);
+
+                    const addUrlListener = App.addListener("appUrlOpen", data => {
+                        var oauth = parseCallback(data.url);
+                        processCallback(oauth, promise);
+                        addUrlListener.remove();
+                    });
+
+                    // window.open(registerUrl, "_system");
+                    Browser.open({url: registerUrl});
+                    return promise.promise;
+                },
+
+                accountManagement: function() {
+                    var accountUrl = kc.createAccountUrl();
+
+                    if (typeof accountUrl !== "undefined") {
+                        // window.open(accountUrl, "_system");
+                        Browser.open({url: accountUrl});
                     } else {
                         throw "Not supported by the OIDC server";
                     }
