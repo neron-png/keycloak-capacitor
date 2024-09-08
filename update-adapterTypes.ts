@@ -34,6 +34,7 @@ export default function transformer(file: FileInfo, api: API) {
             // add new adaptors
             node.types.push(j.tsLiteralType(j.stringLiteral("capacitor")));
             node.types.push(j.tsLiteralType(j.stringLiteral("capacitor-native")))
+            node.types.push(j.tsLiteralType(j.stringLiteral("capacitor-browser")))
 
             return node;
         }
