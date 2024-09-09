@@ -20,6 +20,7 @@ export default function transformer(file: FileInfo, api: API) {
     .forEach(p => {
       p.get("elements").push(j.literal('capacitor'));
       p.get("elements").push(j.literal('capacitor-native'));
+      p.get("elements").push(j.literal('capacitor-browser'));
     })
     .toSource({quote: 'single'});
 }

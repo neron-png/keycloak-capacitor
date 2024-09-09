@@ -92,7 +92,7 @@ export interface KeycloakInitOptions {
 	 * });
 	 * ```
 	 */
-	adapter?: 'default' | 'cordova' | 'cordova-native' | KeycloakAdapter | 'capacitor' | 'capacitor-native';
+	adapter?: 'default' | 'cordova' | 'cordova-native' | KeycloakAdapter | 'capacitor' | 'capacitor-native' | 'capacitor-browser';
 	
 	/**
 	 * Specifies an action to do on load.
